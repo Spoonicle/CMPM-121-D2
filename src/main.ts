@@ -1,5 +1,6 @@
 import { StrokeCommand } from "./commands.ts";
 import type { DrawingCommand, Point } from "./types.ts";
+import { exportImage } from "./export.ts";
 
 const app = document.querySelector<HTMLElement>("#app")!;
 
@@ -9,6 +10,14 @@ heading.textContent = "D2 project";
 
 const message = document.createElement("p");
 message.textContent = "Your project starts here.";
+
+// Create our Canvas
+const canvas = document.createElement("canvas");
+canvas.width = 600;
+canvas.height = 400;
+canvas.style.border = "1px solid #ccc";
+canvas.style.display = "block";
+canvas.style.cursor = "crosshair";
 
 // Create our Toolbar
 const toolbar = document.createElement("div");
@@ -29,15 +38,13 @@ redrawBtn.addEventListener("click", () => {
   redraw();
 });
 
-// Create our Canvas
-const canvas = document.createElement("canvas");
-canvas.width = 600;
-canvas.height = 400;
-canvas.style.border = "1px solid #ccc";
-canvas.style.display = "block";
-canvas.style.cursor = "crosshair";
+const exportBtn = document.createElement("button");
+exportBtn.textContent = "Export";
+exportBtn.addEventListener("click", () => {
+  exportImage(undoStack, canvas.width, canvas.height, 2);
+});
 
-toolbar.append(undoBtn, redoBtn, redrawBtn);
+toolbar.append(undoBtn, redoBtn, redrawBtn, exportBtn);
 
 app.append(heading, message, toolbar, canvas);
 
