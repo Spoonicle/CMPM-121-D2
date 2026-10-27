@@ -15,10 +15,19 @@ const toolbar = document.createElement("div");
 toolbar.style.marginBottom = "8px";
 toolbar.id = "toolbar";
 
-// Create our Redraw Button
+const undoBtn = document.createElement("button");
+undoBtn.textContent = "Undo";
+undoBtn.disabled = true;
+
+const redoBtn = document.createElement("button");
+redoBtn.textContent = "Redo";
+redoBtn.disabled = true;
+
 const redrawBtn = document.createElement("button");
 redrawBtn.textContent = "Redraw";
-toolbar.append(redrawBtn);
+redrawBtn.addEventListener("click", () => {
+  redraw();
+});
 
 // Create our Canvas
 const canvas = document.createElement("canvas");
@@ -28,18 +37,26 @@ canvas.style.border = "1px solid #ccc";
 canvas.style.display = "block";
 canvas.style.cursor = "crosshair";
 
+toolbar.append(undoBtn, redoBtn, redrawBtn);
+
 app.append(heading, message, toolbar, canvas);
 
 const ctx = canvas.getContext("2d")!;
 
-const documentCommands: DrawingCommand[] = [];
+const undoStack: DrawingCommand[] = [];
+const redoStack: DrawingCommand[] = [];
 
 let currentPoints: Point[] | null = null;
+
+function updateButtons() {
+  undoBtn.disabled = undoStack.length === 0;
+  redoBtn.disabled = redoStack.length === 0;
+}
 
 function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const cmd of documentCommands) {
+  for (const cmd of undoStack) {
     cmd.render(ctx);
   }
 
@@ -47,11 +64,9 @@ function redraw() {
     const tempStroke = new StrokeCommand(currentPoints, 2, "#000000");
     tempStroke.render(ctx);
   }
-}
 
-redrawBtn.addEventListener("click", () => {
-  redraw();
-});
+  updateButtons();
+}
 
 // Pointer Event Handler
 function getCanvasCoordinates(e: PointerEvent): Point {
@@ -76,9 +91,24 @@ canvas.addEventListener("pointermove", (e) => {
   redraw();
 });
 
+undoBtn.addEventListener("click", () => {
+  if (undoStack.length === 0) return;
+  const undone = undoStack.pop()!;
+  redoStack.push(undone);
+  redraw();
+});
+
+redoBtn.addEventListener("click", () => {
+  if (redoStack.length === 0) return;
+  const redone = redoStack.pop()!;
+  undoStack.push(redone);
+  redraw();
+});
+
 function finishGesture() {
   if (currentPoints && currentPoints.length > 0) {
-    documentCommands.push(new StrokeCommand(currentPoints, 2, "#000000"));
+    undoStack.push(new StrokeCommand(currentPoints, 2, "#000000"));
+    redoStack.length = 0;
     currentPoints = null;
     redraw();
   }
